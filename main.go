@@ -3,13 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"sync"
 )
 
 type User struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	Age    int    `json:"age"`
+	Number int    `json:"number"`
 }
 
 var (
@@ -18,18 +21,37 @@ var (
 )
 
 func main() {
-	fmt.Println("Starting server on :8080")
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/{$}", handleRoot)
+
+	// Define the routes
+	mux.HandleFunc("GET /{$}", handleRoot)
 	mux.HandleFunc("POST /users", createUser)
 	mux.HandleFunc("GET /users/{id}", getUser)
 	mux.HandleFunc("DELETE /users/{id}", deleteUser)
 
-	http.ListenAndServe(":8080", mux)
+	fmt.Println("Starting server on :8080")
+
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
+		return
+	}
+
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, World!")
+	tmpl, err := template.ParseFiles("templates/index.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	if err := tmpl.Execute(w, Users); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func createUser(w http.ResponseWriter, r *http.Request) {
