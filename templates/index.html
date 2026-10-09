@@ -57,15 +57,93 @@
 			font-size: 1rem;
 		}
 
-		.badge {
-			flex-shrink: 0;
-			padding: 10px 14px;
-			border: 1px solid #b9d8d8;
-			border-radius: 999px;
-			color: #116568;
-			background: #e6f6f4;
+		.add-user-button,
+		.submit-button {
+			border: 0;
+			border-radius: 10px;
+			padding: 12px 18px;
+			color: #ffffff;
+			background: #167c80;
+			font: inherit;
+			font-weight: 700;
+			cursor: pointer;
+			transition: background-color 160ms ease, transform 160ms ease;
+		}
+
+		.add-user-button:hover,
+		.submit-button:hover {
+			background: #116568;
+			transform: translateY(-1px);
+		}
+
+		.user-form {
+			display: none;
+			gap: 14px;
+			margin-bottom: 20px;
+			padding: 20px;
+			border: 1px solid #d8e1e9;
+			border-radius: 16px;
+			background: #ffffff;
+			box-shadow: 0 12px 30px rgba(33, 55, 76, 0.08);
+		}
+
+		.user-form.visible {
+			display: grid;
+		}
+
+		.form-fields {
+			display: grid;
+			grid-template-columns: 2fr 1fr 1fr;
+			gap: 12px;
+		}
+
+		.form-fields label {
+			display: grid;
+			gap: 6px;
+			color: #475569;
 			font-size: 0.85rem;
 			font-weight: 700;
+		}
+
+		.form-fields input {
+			width: 100%;
+			padding: 10px 12px;
+			border: 1px solid #cbd5e1;
+			border-radius: 8px;
+			font: inherit;
+		}
+
+		.form-fields input:focus {
+			outline: 2px solid #b9d8d8;
+			border-color: #167c80;
+		}
+
+		.form-error {
+			display: none;
+			margin: 0;
+			color: #b42318;
+			font-size: 0.9rem;
+		}
+
+		.form-error.visible {
+			display: block;
+		}
+
+		.delete-form button {
+			border: 0;
+			border-radius: 8px;
+			padding: 6px 12px;
+			color: #ffffff;
+			background: #b42318;
+			font: inherit;
+			font-weight: 700;
+			cursor: pointer;
+			transition: background-color 160ms ease, transform 160ms ease;
+		}
+
+		.delete-form button:hover {
+			background: #8b1a14;
+			transform: translateY(-1px);
 		}
 
 		.table-wrap {
@@ -129,6 +207,10 @@
 				gap: 16px;
 			}
 
+			.form-fields {
+				grid-template-columns: 1fr;
+			}
+
 			.table-wrap {
 				overflow-x: auto;
 			}
@@ -148,21 +230,43 @@
 	<main>
 		<header class="header">
 			<div>
-				<p class="eyebrow">Gestion des données</p>
-				<h1>Utilisateurs</h1>
-				<p class="subtitle">Consultez les informations enregistrées dans votre espace.</p>
+				<p class="eyebrow">Data management</p>
+				<h1>Users</h1>
+				<p class="subtitle">View the information registered in your workspace.</p>
 			</div>
-			<span class="badge">Annuaire actif</span>
+			<button class="add-user-button" id="add-user-button" type="button">Add User</button>
 		</header>
+
+		<form class="user-form" id="user-form">
+			<div class="form-fields">
+				<label>
+					Name
+					<input id="name" name="name" type="text" required>
+				</label>
+				<label>
+					Age
+					<input id="age" name="age" type="number" min="0" required>
+				</label>
+				<label>
+					Number
+					<input id="number" name="number" type="number" required>
+				</label>
+			</div>
+			<div>
+				<button id="save-button-user" class="submit-button" type="submit">Save User</button>
+			</div>
+			<p class="form-error" id="form-error" role="alert"></p>
+		</form>
 
 		<div class="table-wrap">
 			<table>
 				<thead>
 					<tr>
 						<th>ID</th>
-						<th>Nom</th>
-						<th>Âge</th>
-						<th>Numéro</th>
+						<th>Name</th>
+						<th>Age</th>
+						<th>Number</th>
+						<th>Actions</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -172,11 +276,90 @@
 						<td>{{$user.Name}}</td>
 						<td>{{$user.Age}}</td>
 						<td>{{$user.Number}}</td>
+						<td>
+							<form class="delete-form" data-id="{{$id}}" style="display:inline;">
+	                           <button type="submit">Delete</button>
+                            </form>
+						</td>
 					</tr>
 					{{end}}
 				</tbody>
 			</table>
 		</div>
 	</main>
+
+    <script>
+
+		const form = document.getElementById('user-form');
+
+		const addUserButton = document.getElementById('add-user-button');
+		addUserButton.addEventListener("click", function() {
+			form.classList.toggle('visible');
+			addUserButton.textContent = form.classList.contains('visible') ? 'Cancel' : 'Add User';
+		});
+		form.addEventListener("submit", function(event) {
+			event.preventDefault();
+			
+			
+			const user = {
+
+				name: document.getElementById('name').value,
+				age: parseInt(document.getElementById('age').value),
+				number:parseInt(document.getElementById('number').value)
+
+			}
+
+			fetch('/users', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(user)
+			})
+			.then(response => {
+		      if (!response.ok) {
+			  throw new Error("Erreur lors de l'ajout");
+		       }
+		      location.reload();
+	        })
+			
+			.catch(error => {
+				console.error('Error:', error);
+			});
+
+			form.classList.remove('visible');
+			addUserButton.textContent = 'Add User';
+		});
+
+
+
+
+		document.querySelectorAll('.delete-form').forEach(function(deleteForm) {
+	     deleteForm.addEventListener('submit', function(event) {
+		 event.preventDefault();
+
+		 const id = deleteForm.dataset.id;
+
+		 fetch('/users/' + id, {
+			method: 'DELETE'
+		 })
+		 .then(response => {
+			if (!response.ok) {
+				throw new Error("Erreur lors de la suppression");
+			}
+			location.reload();
+		 })
+		 .catch(error => {
+			console.error('Error:', error);
+		   });
+	       });
+        });
+
+
+	</script>
+
+
+
+
 </body>
 </html>

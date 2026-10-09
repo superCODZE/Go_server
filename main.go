@@ -68,8 +68,10 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mutex.Lock()
+	defer mutex.Unlock()
 	Users[len(Users)+1] = user
-	mutex.Unlock()
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func getUser(w http.ResponseWriter, r *http.Request) {
@@ -80,8 +82,8 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mutex.RLock()
+	defer mutex.RUnlock()
 	user, exists := Users[id]
-	mutex.RUnlock()
 
 	if !exists {
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -111,8 +113,8 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mutex.Lock()
+	defer mutex.Unlock()
 	delete(Users, id)
-	mutex.Unlock()
 
 	w.WriteHeader(http.StatusNoContent)
 }
